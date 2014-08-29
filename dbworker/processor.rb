@@ -25,6 +25,7 @@ module DBWorker
 			new_game_tags = []
 			new_game_moves = []
 
+			tagged_games_file = File.open(@@tagged_games_temp_filename,"w")
 			positions_file = File.open(@@positions_temp_filename, "w")
 			moves_file = File.open(@@moves_temp_filename, "w")
 			game_moves_file = File.open(@@game_moves_temp_filename, "w")
@@ -32,14 +33,27 @@ module DBWorker
 			@@games.each_with_index do |gam,ind|
 				if gam
 
-					game = Game.new({id:@@game_next_id, game_file_id: gamefile.id, offset: @@lengths[ind],length: @@lengths[ind+1]-@@lengths[ind]})
+					tags = Hash.new()
+					gam.tags.each_pair do |key,value|
+						tags.merge!({key.downcase => value})
+					end
+
+					game = TaggedGame.new({
+						id:@@game_next_id, game_file_id: gamefile.id, offset: @@lengths[ind],length: @@lengths[ind+1]-@@lengths[ind],
+						eco: tags['eco'], str_result: tags['result'], black: tags['black'], white: tags['white'],
+						round: tags['round'], date: tags['date'], site: tags['site'], event: tags['event'],
+						blackelo: tags['blackelo'].to_i, whiteelo: tags['whiteelo'].to_i, opening: tags['opening'], fen: tags['fen'], setup: tags['setup'],
+						variation: tags['variation'], year: tags['year'].to_i, month: tags['month'].to_i, day: tags['day'].to_i,
+						eco_code: tags['eco'][0], eco_num: tags['eco'].slice(1..66)
+						})
 					if gam.result == '0-1'
 						game.result = -1
 					elsif gam.result == '1-0'
 						game.result = 1
 					else game.result = 0
 					end
-					new_games << game
+					# new_games << game
+					tagged_games_file.write("#{game[:id]}\t#{game[:game_file_id]}\t#{game[:offset]}\t#{game[:length]}\t#{game[:result]}\t#{game[:eco]}\t#{game[:str_result]}\t#{game[:black]}\t#{game[:white]}\t#{game[:round]}\t#{game[:date]}\t#{game[:site]}\t#{game[:event]}\t#{game[:blackelo]}\t#{game[:whiteelo]}\t#{game[:opening]}\t#{game[:fen]}\t#{game[:setup]}\t#{game[:variation]}\t#{game[:year]}\t#{game[:month]}\t#{game[:day]}\t#{game[:eco_code]}\t#{game[:eco_num]}\r")
 
 					gam.tags.each do |tg|
 
@@ -49,29 +63,28 @@ module DBWorker
 							new_tags[tag.name] = tag
 						end
 
-						new_game_tags << {tag_id: tag.id, game_id: game.id, tag_value: tg[1]}
+					# 	new_game_tags << {tag_id: tag.id, game_id: game.id, tag_value: tg[1]}
 
 					end
 
 					@@game_next_id = @@game_next_id + 1
 
-					fenhash = 0
-					positions_file.write("#{@@pos_next_id}\t#{@@fen_lists[ind][0]}\r") 
+					prev_index = @@fen_lists[ind][0].to_position.figures_count
+					positions_file.write("#{@@pos_next_id}\t#{prev_index}\t#{@@fen_lists[ind][0]}\r") 
 					position_1_id = @@pos_next_id
 					@@pos_next_id = @@pos_next_id + 1
-					
 					@@fen_lists[ind].each_with_index do |fn,i|
 
 						if i>0
-
+							cur_index = fn.to_position.figures_count
 							position2 = nil
-							positions_file.write("#{@@pos_next_id}\t#{fn}\r")
+							positions_file.write("#{@@pos_next_id}\t#{cur_index}\t#{fn}\r")
 							@@move_next_id = @@move_next_id + 1
-							moves_file.write("#{@@move_next_id}\t#{position_1_id}\t#{@@pos_next_id}\t#{gam.moves[i-1]}\r")
+							moves_file.write("#{@@move_next_id}\t#{prev_index}\t#{position_1_id}\t#{@@pos_next_id}\t#{gam.moves[i-1]}\t#{cur_index}\r")
 							position_1_id = @@pos_next_id
-							game_moves_file.write("#{@@move_next_id}\t#{game.id}\t#{i}\r")
+							game_moves_file.write("#{@@move_next_id}\t#{cur_index}\t#{@@move_next_id}\t#{game.id}\t#{i}\r")
 							@@pos_next_id = @@pos_next_id + 1
-
+							prev_index = cur_index
 
 						end
 
@@ -84,11 +97,12 @@ module DBWorker
 			end
 
 			print "\nWriting games to file"
-			File.write(@@games_temp_filename, new_games.map { |x| "#{x[:id]}\t#{x[:game_file_id]}\t#{x[:offset]}\t#{x[:length]}\t#{x[:result]}\r" }.join)
+			tagged_games_file.close
+			# File.write(@@games_temp_filename, new_games.map { |x| "#{x[:id]}\t#{x[:game_file_id]}\t#{x[:offset]}\t#{x[:length]}\t#{x[:result]}\t#{x[:eco]}\t#{x[:str_result]}\t#{x[:black]}\t#{x[:white]}\t#{x[:round]}\t#{x[:date]}\t#{x[:site]}\t#{x[:event]}\t#{x[:blackelo]}\t#{x[:whiteelo]}\t#{x[:opening]}\t#{x[:fen]}\t#{x[:setup]}\t#{x[:variation]}\t#{x[:year]}\t#{x[:year]}\t#{x[:month]}\t#{x[:day]}\t#{x[:eco_code]}\t#{x[:eco_num]}\r" }.join)
 			print "\nWriting tags to file"
 			File.write(@@tags_temp_filename, new_tags.values.map { |x| "#{x[:id]}\t#{x[:name]}\r" }.join)
-			print "\nWriting game tags to file"
-			File.write(@@game_tags_temp_filename, new_game_tags.map { |x| "#{x[:game_id]}\t#{x[:tag_id]}\t#{x[:tag_value]}\r" }.join)
+			# print "\nWriting game tags to file"
+			# File.write(@@game_tags_temp_filename, new_game_tags.map { |x| "#{x[:game_id]}\t#{x[:tag_id]}\t#{x[:tag_value]}\r" }.join)
 			print "\nWriting positions to file"
 			positions_file.close
 			print "\nWriting moves to file"
@@ -140,7 +154,7 @@ module DBWorker
 			@@games.each_with_index do |gam,ind|
 				if gam
 
-					game = Game.new({id:@@game_next_id, game_file_id: gamefile.id, offset: @@lengths[ind],length: @@lengths[ind+1]-@@lengths[ind]})
+					game = TaggedGame.new({id:@@game_next_id, game_file_id: gamefile.id, offset: @@lengths[ind],length: @@lengths[ind+1]-@@lengths[ind]})
 					if gam.result == '0-1'
 						game.result = -1
 					elsif gam.result == '1-0'
@@ -264,7 +278,7 @@ module DBWorker
 			@@games.each_with_index do |gam,ind|
 				if gam
 
-					game = Game.new({id:@@game_next_id, game_file_id: gamefile.id, offset: @@lengths[ind],length: @@lengths[ind+1]-@@lengths[ind]})
+					game = TaggedGame.new({id:@@game_next_id, game_file_id: gamefile.id, offset: @@lengths[ind],length: @@lengths[ind+1]-@@lengths[ind]})
 					if gam.result == '0-1'
 						game.result = -1
 					elsif gam.result == '1-0'
@@ -398,7 +412,7 @@ module DBWorker
 			@@games.each_with_index do |gam,ind|
 				if gam
 
-					game = Game.new({id:@@game_next_id, game_file_id: gamefile.id, offset: @@lengths[ind],length: @@lengths[ind+1]-@@lengths[ind]})
+					game = TaggedGame.new({id:@@game_next_id, game_file_id: gamefile.id, offset: @@lengths[ind],length: @@lengths[ind+1]-@@lengths[ind]})
 					if gam.result == '0-1'
 						game.result = -1
 					elsif gam.result == '1-0'

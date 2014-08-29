@@ -22,13 +22,23 @@ class CreatePositions < ActiveRecord::Migration
 	# end
 
 	def self.up
-		create_table "positions" do |t|
+		table_name = 'positions'
+		create_table :positions do |t|
+			t.string :table_index
 			t.string :fen
+			t.integer :played
+			t.integer :white_victory_count
+			t.integer :black_victory_count
+			t.integer :draw_count
 		end
+
+		breed(table_name)
+		create_insert_rules(table_name)
 	end
 
 	def self.down
-		drop_table "positions"
+		drop_table :positions
+		genocide(table_name )
 	end
 	
 end

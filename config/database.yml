@@ -4,7 +4,7 @@
 # database: db/development.sqlite3
 
 adapter: postgresql
-database: tttt2
+database: final
 username: postgres
 password: 1
 host: 10.0.0.10

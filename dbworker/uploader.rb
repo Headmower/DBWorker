@@ -11,17 +11,17 @@ module DBWorker
 			start_time = Time.now
 
 			print "\nMass insert of games to DB"
-			ActiveRecord::Base.connection.execute "COPY games (id, game_file_id, \"offset\", length, result) FROM 'C:\\Project.GameDB\\DBWorker\\games.new'"
+			ActiveRecord::Base.connection.execute "COPY tagged_games(id, game_file_id, \"offset\", \"length\", result, eco, str_result, black, white, round, \"date\", site, event, blackelo, whiteelo, opening, fen, setup, variation, \"year\", \"month\", \"day\", eco_code, eco_num) FROM 'C:\\DBWorker\\tmp\\games.new'"
 			print "\nMass insert of tags to DB"
-			ActiveRecord::Base.connection.execute "COPY tags (id, name) FROM 'C:\\Project.GameDB\\DBWorker\\tags.new'"
-			print "\nMass insert of game tags to DB"
-			ActiveRecord::Base.connection.execute "COPY game_tags (game_id, tag_id, tag_value) FROM 'C:\\Project.GameDB\\DBWorker\\game_tags.new'"
+			ActiveRecord::Base.connection.execute "COPY tags (id, name) FROM 'C:\\DBWorker\\tmp\\tags.new'"
+			# print "\nMass insert of game tags to DB"
+			# ActiveRecord::Base.connection.execute "COPY game_tags (game_id, tag_id, tag_value) FROM 'C:\\DBWorker\\game_tags.new'"
 			print "\nMass insert of positions to DB"
-			ActiveRecord::Base.connection.execute "COPY positions (id, fen) FROM 'C:\\Project.GameDB\\DBWorker\\positions.new'"
+			ActiveRecord::Base.connection.execute "COPY positions (id, table_index, fen) FROM 'C:\\DBWorker\\tmp\\positions.new'"
 			print "\nMass insert of moves to DB"
-			ActiveRecord::Base.connection.execute "COPY moves (id, from_id, to_id,text) FROM 'C:\\Project.GameDB\\DBWorker\\moves.new'"
+			ActiveRecord::Base.connection.execute "COPY moves (id, table_index, from_id, to_id, text, to_table_index) FROM 'C:\\DBWorker\\tmp\\moves.new'"
 			print "\nMass insert of game moves to DB"
-			ActiveRecord::Base.connection.execute "COPY game_moves (move_id, game_id, half_move_number) FROM 'C:\\Project.GameDB\\DBWorker\\game_moves.new'"
+			ActiveRecord::Base.connection.execute "COPY game_moves (id, table_index, move_id, game_id, half_move_number) FROM 'C:\\DBWorker\\tmp\\game_moves.new'"
 
 			GC.enable
 			GC.start

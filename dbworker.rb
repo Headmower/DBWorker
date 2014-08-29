@@ -1,6 +1,6 @@
 #!/usr/bin/ruby
 #encoding utf-8
-$LOAD_PATH << '../../pgn/lib'
+$LOAD_PATH << './pgn/lib'
 
 require 'rubygems'
 require 'active_record'
@@ -106,10 +106,10 @@ module DBWorker
 		#Отключаем сборщик мусора
 		GC.disable
 
-		@@game_next_id = Game.last.try(:id) || 1
-		@@tag_next_id  = Tag.last.try(:id)  || 1
-		@@move_next_id = Move.last.try(:id) || 1
-		#@@pos_next_id =  Position.last.try(:id) || 1
+		@@game_next_id = TaggedGame.try(:maximum,:id) || 1
+		@@tag_next_id  = Tag.try(:maximum,:id)  || 1
+		@@move_next_id = Move.try(:maximum,:id) || 1
+		#@@pos_next_id =  Position.try(:maximum,:id) || 1
 		@@shitty_games_count = 0
 		@@games_count = 0
 
@@ -122,13 +122,13 @@ module DBWorker
 
 		puts "\nNext position identifier is set to #{@@pos_next_id}"
 
-		@@games_temp_filename = 'games.new'
-		@@game_files_temp_filename = 'game_files.new'
-		@@game_moves_temp_filename = 'game_moves.new'
-		@@game_tags_temp_filename = 'game_tags.new'
-		@@moves_temp_filename = 'moves.new'
-		@@positions_temp_filename = 'positions.new'
-		@@tags_temp_filename = 'tags.new'
+		@@tagged_games_temp_filename = '.\\tmp\\games.new'
+		@@game_files_temp_filename = '.\\tmp\\game_files.new'
+		@@game_moves_temp_filename = '.\\tmp\\game_moves.new'
+		@@game_tags_temp_filename = '.\\tmp\\game_tags.new'
+		@@moves_temp_filename = '.\\tmp\\moves.new'
+		@@positions_temp_filename = '.\\tmp\\positions.new'
+		@@tags_temp_filename = '.\\tmp\\tags.new'
 
 		position = 0
 
@@ -197,7 +197,7 @@ module DBWorker
 		#Отключаем сборщик мусора
 		GC.disable
 
-		@@game_next_id = Game.last.try(:id).to_i + 1
+		@@game_next_id = TaggedGame.last.try(:id).to_i + 1
 		@@tag_next_id  = Tag.last.try(:id).to_i + 1 
 
 		@@move_next_id = Move.max_id.to_i + 1

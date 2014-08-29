@@ -24,15 +24,22 @@ class CreateMoves < ActiveRecord::Migration
 
 
 	def self.up
-		create_table "moves" do |t|
+		table_name = 'moves'
+		create_table :moves do |t|
+			t.string :table_index
 			t.string :text
-			t.string :to_table_id
+			t.string :to_table_index
 			t.references :from
 			t.references :to
 		end
+
+		breed(table_name)
+		create_insert_rules(table_name)
+
 	end
 
 	def self.down
-		drop_table "moves"
+		drop_table :moves
+		genocide(table_name)
 	end
 end

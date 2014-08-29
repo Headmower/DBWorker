@@ -1,4 +1,4 @@
 class GameFile < ActiveRecord::Base
 
-	has_many :games
+	has_many :tagged_games
 end
