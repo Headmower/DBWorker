@@ -25,10 +25,25 @@ module DBWorker
 			new_game_tags = []
 			new_game_moves = []
 
-			tagged_games_file = File.open(@@tagged_games_temp_filename,"w")
-			positions_file = File.open(@@positions_temp_filename, "w")
-			moves_file = File.open(@@moves_temp_filename, "w")
-			game_moves_file = File.open(@@game_moves_temp_filename, "w")
+			tagged_games_file = File.open(@@tagged_games_temp_filename+'.new',"w")
+
+
+			positions_file = {}
+			moves_file = {}
+			game_moves_file = {}
+			['w','b'].each do |color|
+				(2..32).each do |n|
+					index = n.to_s+'_'+color
+					positions_file[index] = File.open(@@positions_temp_filename+"_#{index}.new", "w")
+					moves_file[index] = File.open(@@moves_temp_filename+"_#{index}.new", "w")
+					game_moves_file[index] = File.open(@@game_moves_temp_filename+"_#{index}.new", "w")
+				end
+			end
+
+			
+			# positions_file = File.open(@@positions_temp_filename, "w")
+			# moves_file = File.open(@@moves_temp_filename, "w")
+			# game_moves_file = File.open(@@game_moves_temp_filename, "w")
 
 			@@games.each_with_index do |gam,ind|
 				if gam
@@ -56,11 +71,9 @@ module DBWorker
 					tagged_games_file.write("#{game[:id]}\t#{game[:game_file_id]}\t#{game[:offset]}\t#{game[:length]}\t#{game[:result]}\t#{game[:eco]}\t#{game[:str_result]}\t#{game[:black]}\t#{game[:white]}\t#{game[:round]}\t#{game[:date]}\t#{game[:site]}\t#{game[:event]}\t#{game[:blackelo]}\t#{game[:whiteelo]}\t#{game[:opening]}\t#{game[:fen]}\t#{game[:setup]}\t#{game[:variation]}\t#{game[:year]}\t#{game[:month]}\t#{game[:day]}\t#{game[:eco_code]}\t#{game[:eco_num]}\r")
 
 					gam.tags.each do |tg|
-
-						if !(tag = all_tags[tg[0]] || new_tags[tg[0]])
-							tag = Tag.new({id:@@tag_next_id,name:tg[0]})
+						if Tag.where(name: tg[0]).blank?
+							Tag.create!({name:tg[0]})
 							@@tag_next_id = @@tag_next_id + 1
-							new_tags[tag.name] = tag
 						end
 
 					# 	new_game_tags << {tag_id: tag.id, game_id: game.id, tag_value: tg[1]}
@@ -69,20 +82,20 @@ module DBWorker
 
 					@@game_next_id = @@game_next_id + 1
 
-					prev_index = @@fen_lists[ind][0].to_position.figures_count
-					positions_file.write("#{@@pos_next_id}\t#{prev_index}\t#{@@fen_lists[ind][0]}\r") 
+					prev_index = @@fen_lists[ind][0].to_position.figures_count.to_s+'_'+@@fen_lists[ind][0].active
+					positions_file[prev_index].write("#{@@pos_next_id}\t#{prev_index}\t#{@@fen_lists[ind][0]}\r") 
 					position_1_id = @@pos_next_id
 					@@pos_next_id = @@pos_next_id + 1
 					@@fen_lists[ind].each_with_index do |fn,i|
 
 						if i>0
-							cur_index = fn.to_position.figures_count
+							cur_index = fn.to_position.figures_count.to_s+'_'+fn.active
 							position2 = nil
-							positions_file.write("#{@@pos_next_id}\t#{cur_index}\t#{fn}\r")
+							positions_file[cur_index].write("#{@@pos_next_id}\t#{cur_index}\t#{fn}\r")
 							@@move_next_id = @@move_next_id + 1
-							moves_file.write("#{@@move_next_id}\t#{prev_index}\t#{position_1_id}\t#{@@pos_next_id}\t#{gam.moves[i-1]}\t#{cur_index}\r")
+							moves_file[prev_index].write("#{@@move_next_id}\t#{prev_index}\t#{position_1_id}\t#{@@pos_next_id}\t#{gam.moves[i-1]}\t#{cur_index}\r")
 							position_1_id = @@pos_next_id
-							game_moves_file.write("#{@@move_next_id}\t#{cur_index}\t#{@@move_next_id}\t#{game.id}\t#{i}\r")
+							game_moves_file[cur_index].write("#{@@move_next_id}\t#{cur_index}\t#{@@move_next_id}\t#{game.id}\t#{i}\r")
 							@@pos_next_id = @@pos_next_id + 1
 							prev_index = cur_index
 
@@ -98,17 +111,24 @@ module DBWorker
 
 			print "\nWriting games to file"
 			tagged_games_file.close
+
 			# File.write(@@games_temp_filename, new_games.map { |x| "#{x[:id]}\t#{x[:game_file_id]}\t#{x[:offset]}\t#{x[:length]}\t#{x[:result]}\t#{x[:eco]}\t#{x[:str_result]}\t#{x[:black]}\t#{x[:white]}\t#{x[:round]}\t#{x[:date]}\t#{x[:site]}\t#{x[:event]}\t#{x[:blackelo]}\t#{x[:whiteelo]}\t#{x[:opening]}\t#{x[:fen]}\t#{x[:setup]}\t#{x[:variation]}\t#{x[:year]}\t#{x[:year]}\t#{x[:month]}\t#{x[:day]}\t#{x[:eco_code]}\t#{x[:eco_num]}\r" }.join)
 			print "\nWriting tags to file"
 			File.write(@@tags_temp_filename, new_tags.values.map { |x| "#{x[:id]}\t#{x[:name]}\r" }.join)
 			# print "\nWriting game tags to file"
 			# File.write(@@game_tags_temp_filename, new_game_tags.map { |x| "#{x[:game_id]}\t#{x[:tag_id]}\t#{x[:tag_value]}\r" }.join)
 			print "\nWriting positions to file"
-			positions_file.close
+			positions_file.each_value do |v|
+				v.close
+			end
 			print "\nWriting moves to file"
-			moves_file.close
+			moves_file.each_value do |v|
+				v.close
+			end
 			print "\nWriting game moves to file"
-			game_moves_file.close
+			game_moves_file.each_value do |v|
+				v.close
+			end
 
 			GC.enable
 			GC.start

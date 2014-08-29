@@ -102,7 +102,7 @@ module DBWorker
 
 
 	#Метод, принимающий путь к файлу *.pgn для парсинга и последующей обработки и заливки в базу данных
-	def self.processFile(filename, step = 2000000)
+	def self.processFile(filename, step = 1200000)
 		#Отключаем сборщик мусора
 		GC.disable
 
@@ -122,13 +122,13 @@ module DBWorker
 
 		puts "\nNext position identifier is set to #{@@pos_next_id}"
 
-		@@tagged_games_temp_filename = '.\\tmp\\games.new'
-		@@game_files_temp_filename = '.\\tmp\\game_files.new'
-		@@game_moves_temp_filename = '.\\tmp\\game_moves.new'
-		@@game_tags_temp_filename = '.\\tmp\\game_tags.new'
-		@@moves_temp_filename = '.\\tmp\\moves.new'
-		@@positions_temp_filename = '.\\tmp\\positions.new'
-		@@tags_temp_filename = '.\\tmp\\tags.new'
+		@@tagged_games_temp_filename = '.\\tmp\\games'
+		@@game_files_temp_filename = '.\\tmp\\game_files'
+		@@game_moves_temp_filename = '.\\tmp\\game_moves'
+		@@game_tags_temp_filename = '.\\tmp\\game_tags'
+		@@moves_temp_filename = '.\\tmp\\moves'
+		@@positions_temp_filename = '.\\tmp\\positions'
+		@@tags_temp_filename = '.\\tmp\\tags'
 
 		position = 0
 

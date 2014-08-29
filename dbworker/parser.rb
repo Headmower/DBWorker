@@ -1,7 +1,7 @@
 module DBWorker
 
 		#Метод, парсящий игры
-		def self.parse(games_text, step = 80000)
+		def self.parse(games_text, step = 60000)
 			GC.enable
 			GC.start
 			GC.disable

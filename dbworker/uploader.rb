@@ -12,17 +12,21 @@ module DBWorker
 
 			print "\nMass insert of games to DB"
 			ActiveRecord::Base.connection.execute "COPY tagged_games(id, game_file_id, \"offset\", \"length\", result, eco, str_result, black, white, round, \"date\", site, event, blackelo, whiteelo, opening, fen, setup, variation, \"year\", \"month\", \"day\", eco_code, eco_num) FROM 'C:\\DBWorker\\tmp\\games.new'"
-			print "\nMass insert of tags to DB"
-			ActiveRecord::Base.connection.execute "COPY tags (id, name) FROM 'C:\\DBWorker\\tmp\\tags.new'"
 			# print "\nMass insert of game tags to DB"
 			# ActiveRecord::Base.connection.execute "COPY game_tags (game_id, tag_id, tag_value) FROM 'C:\\DBWorker\\game_tags.new'"
-			print "\nMass insert of positions to DB"
-			ActiveRecord::Base.connection.execute "COPY positions (id, table_index, fen) FROM 'C:\\DBWorker\\tmp\\positions.new'"
-			print "\nMass insert of moves to DB"
-			ActiveRecord::Base.connection.execute "COPY moves (id, table_index, from_id, to_id, text, to_table_index) FROM 'C:\\DBWorker\\tmp\\moves.new'"
-			print "\nMass insert of game moves to DB"
-			ActiveRecord::Base.connection.execute "COPY game_moves (id, table_index, move_id, game_id, half_move_number) FROM 'C:\\DBWorker\\tmp\\game_moves.new'"
+			['w','b'].each do |color|
+				(2..32).each do |n|
+					index = n.to_s+'_'+color
+					print "\nMass insert of positions to DB"
+					ActiveRecord::Base.connection.execute "COPY positions_#{index} (id, table_index, fen) FROM \'C:\\DBWorker\\tmp\\positions_#{index}.new\'"
+					print "\nMass insert of moves to DB"
+					ActiveRecord::Base.connection.execute "COPY moves_#{index} (id, table_index, from_id, to_id, text, to_table_index) FROM \'C:\\DBWorker\\tmp\\moves_#{index}.new\'"
+					print "\nMass insert of game moves to DB"
+					ActiveRecord::Base.connection.execute "COPY game_moves_#{index} (id, table_index, move_id, game_id, half_move_number) FROM \'C:\\DBWorker\\tmp\\game_moves_#{index}.new\'"
 
+				end
+			end
+			
 			GC.enable
 			GC.start
 
